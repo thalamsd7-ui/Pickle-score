@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleScore — Pickleball Tournament</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A1512;
+    --panel:#101F1A;
+    --card:#132A23;
+    --border:#1E3830;
+    --lime:#A6E22E;
+    --lime-ink:#1C2E0A;
+    --blue:#2F6FED;
+    --blue-2:#1E4FB8;
+    --green:#1FA05C;
+    --green-2:#137A44;
+    --text:#F4F7F1;
+    --muted:#7FA396;
+    --danger-bg:#3A2415;
+    --danger-ink:#F0A868;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 0 90px;}
+
+  header{
+    padding:22px 20px 16px;
+    background:radial-gradient(120% 100% at 0% 0%, #102420 0%, #0A1512 70%);
+    border-bottom:1px solid var(--border);
+  }
+  .brandrow{display:flex;align-items:center;gap:12px;}
+  .ball-logo{width:36px;height:36px;border-radius:50%;background:var(--lime);position:relative;flex-shrink:0;}
+  .ball-logo::before{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background-image:radial-gradient(circle, var(--lime-ink) 1.6px, transparent 1.6px);
+    background-size:8px 8px;background-position:3px 3px;opacity:0.55;
+  }
+  .brand h1{font-family:'Archivo Black',sans-serif;font-size:18px;margin:0;letter-spacing:-0.01em;line-height:1.05;color:var(--text);}
+  .brand h1 span{color:var(--lime);}
+  .brand p{margin:2px 0 0;font-size:10.5px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;}
+
+  .meta{font-size:13px;color:var(--muted);margin:16px 20px 0;}
+  .tabview{display:none;}
+  .tabview.active{display:block;}
+
+  .section-title{
+    font-family:'Archivo Black',sans-serif;font-size:14px;letter-spacing:0.02em;
+    margin:24px 20px 12px;color:var(--text);
+  }
+  .sub-note{margin:-6px 20px 14px;font-size:11.5px;color:var(--muted);}
+
+  .scoreboard{display:flex;gap:10px;margin:14px 20px 0;}
+  .tile{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+  .tile b{display:block;font-family:'Archivo Black',sans-serif;font-size:22px;color:var(--lime);line-height:1.1;}
+  .tile span{font-size:10.5px;color:var(--muted);}
+
+  .quicklinks{display:flex;flex-direction:column;gap:10px;margin:16px 20px 0;}
+  .quickbtn{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:16px 18px;color:var(--text);text-align:left;
+  }
+  .quickbtn.primary{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .quickbtn b{font-family:'Archivo Black',sans-serif;font-size:14px;display:block;}
+  .quickbtn span{font-size:11px;opacity:0.75;display:block;margin-top:2px;}
+  .quickbtn .arrow{font-size:18px;}
+
+  .continue-card{
+    margin:16px 20px 0;background:var(--card);border:1px solid var(--lime);border-radius:14px;padding:14px 16px;
+  }
+  .continue-card b{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--lime);display:block;margin-bottom:6px;}
+  .continue-card .btn{margin-top:10px;}
+
+  .recentlist{margin:0 20px;display:flex;flex-direction:column;gap:8px;}
+  .recentrow{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:12px;
+  }
+  .recentrow .rteams{color:var(--text);font-weight:600;}
+  .recentrow .rscore{font-family:'Archivo Black',sans-serif;color:var(--lime);font-size:14px;}
+  .empty-note{margin:0 20px;font-size:12.5px;color:var(--muted);}
+
+  .segctrl{display:flex;gap:8px;margin:0 20px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;}
+  .segbtn{flex:1;background:none;border:none;color:var(--muted);font-size:12.5px;font-weight:700;padding:9px 4px;border-radius:9px;}
+  .segbtn.active{background:var(--lime);color:var(--lime-ink);}
+
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;padding:13px 10px;
+    font-size:13.5px;font-weight:700;border:1px solid var(--border);background:var(--card);color:var(--text);
+    text-decoration:none;width:100%;
+  }
+  .btn.primary{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+  .actions{display:flex;gap:10px;margin:16px 20px 0;}
+  .actions .btn{flex:1;}
+
+  .panel{margin:14px 20px 0;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;}
+  .formlabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 8px;}
+  .formlabel:first-child{margin-top:0;}
+  .optionrow{display:flex;gap:8px;}
+  .optioncard{
+    flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:left;color:var(--text);
+  }
+  .optioncard.selected{border-color:var(--lime);background:#152E20;}
+  .optioncard b{font-family:'Archivo Black',sans-serif;font-size:12px;display:block;}
+  .optioncard span{font-size:10.5px;color:var(--muted);display:block;margin-top:3px;}
+
+  .playerchecklist{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;}
+  .checkrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 12px;}
+  .checkrow input[type=checkbox]{width:17px;height:17px;accent-color:var(--lime);}
+  .checkrow label{font-size:13px;font-weight:500;flex:1;}
+  .addplayer-row{display:flex;gap:8px;margin-top:8px;}
+  .addplayer-row input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 12px;color:var(--text);font-size:13px;}
+  .addplayer-row button{background:var(--lime);color:var(--lime-ink);border:none;border-radius:10px;padding:0 16px;font-weight:700;font-size:13px;}
+
+  .pillselect{display:flex;gap:8px;flex-wrap:wrap;}
+  .pillopt{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--text);}
+  .pillopt.selected{background:var(--lime);color:var(--lime-ink);border-color:var(--lime);}
+
+  .stepperinput{display:flex;align-items:center;gap:12px;}
+  .stepperinput .num{font-family:'Archivo Black',sans-serif;font-size:20px;min-width:26px;text-align:center;}
+  .smallstep{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;}
+
+  .warn-inline{margin-top:10px;font-size:11.5px;color:var(--danger-ink);background:var(--danger-bg);border-radius:9px;padding:8px 10px;}
+
+  .players{margin:0 20px;display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px 12px 6px 6px;}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--lime);color:var(--lime-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .chip span.nm{font-size:13.5px;font-weight:500;}
+
+  .standings{margin:0 20px;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead tr{background:#0E1E19;}
+  th{text-align:left;font-weight:600;color:var(--muted);font-size:10px;letter-spacing:0.04em;text-transform:uppercase;padding:11px 9px;white-space:nowrap;}
+  td{padding:10px 9px;border-top:1px solid var(--border);white-space:nowrap;color:var(--text);}
+  td.name{font-weight:600;}
+  td.num{text-align:center;color:var(--muted);}
+  td.num.lead{color:var(--lime);font-weight:700;}
+  tr.top td.name{border-left:3px solid var(--lime);padding-left:6px;}
+
+  .round{margin:14px 20px 0;}
+  .round-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .round-head b{font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--text);}
+  .round-head .dash{flex:1;height:0;border-top:1px dashed var(--border);}
+  .resting{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap;}
+  .pill{font-size:10.5px;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:3px 10px;}
+
+  .match{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:12px;}
+  .teams-grid{display:flex;gap:10px;}
+  .team-card{flex:1;border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .team-card.a{background:linear-gradient(160deg, var(--blue), var(--blue-2));}
+  .team-card.b{background:linear-gradient(160deg, var(--green), var(--green-2));}
+  .team-names{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;}
+  select.who{font-family:'Inter',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,0.95);border:none;background:transparent;text-align:center;max-width:120px;text-align-last:center;}
+  select.who option{color:#0A1512;}
+  .amp{font-size:10px;color:rgba(255,255,255,0.6);}
+  .score-val{font-family:'Archivo Black',sans-serif;font-size:44px;color:#fff;line-height:1;}
+  .stepper-row{display:flex;gap:10px;}
+  .stepper{width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,0.16);color:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
+  .stepper:active{background:rgba(255,255,255,0.32);}
+  .winner-tag{font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,0.2);border-radius:999px;padding:2px 8px;}
+
+  .status{margin:12px 2px 2px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  .status.win-status{color:var(--lime);font-weight:600;}
+  .editlink{margin-left:auto;background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;padding:0;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+  .dot.win-dot{background:var(--lime);}
+  .warn{margin-top:10px;font-size:11.5px;color:var(--danger-ink);background:var(--danger-bg);border-radius:9px;padding:7px 10px;}
+
+  .completed-list{margin:0 20px;display:flex;flex-direction:column;gap:8px;}
+  .completed-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+  .completed-head{display:flex;align-items:center;justify-content:space-between;}
+  .completed-head .cmeta{font-size:10.5px;color:var(--muted);}
+  .completed-head .cnum{font-family:'Archivo Black',sans-serif;font-size:11px;color:var(--lime);}
+  .completed-teams{margin-top:8px;font-size:13.5px;}
+  .completed-teams b{color:var(--lime);}
+  .completed-winner{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  .completed-editbtn{margin-top:10px;background:none;border:none;color:var(--muted);font-size:11px;text-decoration:underline;padding:0;}
+
+  .statsgrid{margin:0 20px;display:flex;flex-direction:column;gap:8px;}
+  .statcard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px 16px;}
+  .statcard-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .statcard-head .who-name{display:flex;align-items:center;gap:10px;font-weight:700;font-size:14.5px;}
+  .winpct{font-family:'Archivo Black',sans-serif;font-size:16px;color:var(--lime);}
+  .statrow{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:10px;}
+  .statbox{background:var(--card);border-radius:10px;padding:8px 6px;text-align:center;}
+  .statbox b{display:block;font-family:'Archivo Black',sans-serif;font-size:15px;color:var(--text);}
+  .statbox span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;}
+  .partners{font-size:11.5px;color:var(--muted);}
+  .partners b{color:var(--text);font-weight:600;}
+
+  .faceoff-pickers{display:flex;align-items:center;gap:10px;margin:0 20px 18px;}
+  .foselect{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);font-weight:600;font-size:13.5px;border-radius:12px;padding:11px 10px;}
+  .foselect option{color:#0A1512;}
+  .fo-vs{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--muted);}
+  .fo-summary{margin:0 20px;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px;}
+  .fo-headline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .fo-side{text-align:center;flex:1;}
+  .fo-side b{display:block;font-family:'Archivo Black',sans-serif;font-size:26px;color:var(--lime);}
+  .fo-side span{font-size:12px;color:var(--muted);}
+  .fo-mid{font-size:11px;color:var(--muted);text-align:center;}
+  .fo-bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden;display:flex;margin:14px 0 16px;}
+  .fo-bar-fill{background:var(--lime);height:100%;}
+  .fo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px;}
+  .fo-stats .statbox{background:var(--card);}
+  .fo-history{margin:14px 20px 0;display:flex;flex-direction:column;gap:8px;}
+  .fo-hrow{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px;}
+  .fo-hrow .fo-date{color:var(--muted);font-size:10.5px;margin-bottom:2px;}
+  .fo-hrow .fo-line{color:var(--text);}
+  .fo-hrow b{color:var(--lime);}
+
+  .tagline{text-align:center;font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--muted);margin:26px 20px 0;letter-spacing:0.02em;}
+  .tagline span{color:var(--lime);}
+  .scope-note{margin:14px 20px 0;font-size:11px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:#0D1C17;border-top:1px solid var(--border);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:40;}
+  .navbtn{flex:1;background:none;border:none;color:var(--muted);font-size:11px;font-weight:600;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .navbtn .navdot{width:6px;height:6px;border-radius:50%;background:transparent;}
+  .navbtn.active{color:var(--lime);}
+  .navbtn.active .navdot{background:var(--lime);}
+
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(6,12,10,0.72);z-index:50;align-items:flex-end;justify-content:center;}
+  .modal-backdrop.open{display:flex;}
+  .modal-sheet{width:100%;max-width:560px;max-height:82vh;overflow-y:auto;background:var(--bg);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:18px 0 26px;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin:0 20px 14px;}
+  .modal-note{margin:0 20px 12px;font-size:11.5px;color:var(--muted);}
+  .modal-close{background:var(--card);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brandrow">
+      <div class="ball-logo"></div>
+      <div class="brand">
+        <h1>PICKLE<span>SCORE</span></h1>
+        <p>More play · Less worry</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabview active" id="tab-home">
+    <div class="scoreboard">
+      <div class="tile"><b id="hStatDone">0</b><span>completed today</span></div>
+      <div class="tile"><b id="hStatTotal">0</b><span>today's matches</span></div>
+      <div class="tile"><b id="hStatLeader">—</b><span>leader today</span></div>
+    </div>
+    <div id="continueCard"></div>
+    <div class="quicklinks">
+      <button class="quickbtn primary" id="homePlayBtn"><div><b>Play game</b><span>Doubles or rotating doubles · any even number of players</span></div><span class="arrow">→</span></button>
+      <button class="quickbtn" id="homeCompletedBtn"><div><b>Completed matches</b><span>Every match ever played, editable anytime</span></div><span class="arrow">→</span></button>
+    </div>
+    <div class="actions">
+      <a class="btn" id="shareBtn" href="#" target="_blank" rel="noopener">Share on WhatsApp</a>
+      <button class="btn" id="exportBtn">Export data (JSON)</button>
+    </div>
+    <div class="section-title">Recent results</div>
+    <div class="recentlist" id="recentList"></div>
+  </div>
+
+  <div class="tabview" id="tab-matches">
+    <div class="section-title" style="margin-top:20px;">Matches</div>
+    <div class="segctrl">
+      <button class="segbtn active" id="segToday" data-seg="today">Today</button>
+      <button class="segbtn" id="segCompleted" data-seg="completed">Completed</button>
+    </div>
+
+    <div id="seg-today">
+      <div class="actions" style="margin:0 20px 14px;">
+        <button class="btn primary" id="newSessionBtn">+ Play game</button>
+      </div>
+      <div class="panel" id="wizardPanel" style="display:none;">
+        <div class="formlabel">Format</div>
+        <div class="optionrow">
+          <button class="optioncard selected" data-fmt="rotating"><b>Rotating doubles</b><span>Partners rotate each match</span></button>
+          <button class="optioncard" data-fmt="doubles"><b>Fixed doubles</b><span>Teams stay the same, round robin</span></button>
+        </div>
+
+        <div class="formlabel">Players (pick an even number, 4+)</div>
+        <div class="playerchecklist" id="wizardPlayerList"></div>
+        <div class="addplayer-row">
+          <input type="text" id="wizardNewPlayer" placeholder="New player name" maxlength="24">
+          <button id="wizardAddPlayerBtn">Add</button>
+        </div>
+
+        <div class="formlabel">Points to win</div>
+        <div class="pillselect" id="wizardPoints">
+          <button class="pillopt selected" data-pts="11">11</button>
+          <button class="pillopt" data-pts="15">15</button>
+          <button class="pillopt" data-pts="21">21</button>
+        </div>
+        <div class="sub-note" style="margin:6px 0 0;">Win by 2 always applies.</div>
+
+        <div id="roundsField">
+          <div class="formlabel">Rounds</div>
+          <div class="stepperinput">
+            <button class="smallstep" id="roundsMinus">−</button>
+            <span class="num" id="roundsVal">6</span>
+            <button class="smallstep" id="roundsPlus">+</button>
+          </div>
+        </div>
+
+        <div id="wizardWarn"></div>
+
+        <div class="actions" style="margin:18px 0 0;">
+          <button class="btn primary" id="generateBtn">Generate schedule</button>
+        </div>
+      </div>
+
+      <div id="previewPanel"></div>
+
+      <div id="todayMatches"></div>
+    </div>
+
+    <div id="seg-completed" style="display:none;">
+      <div class="completed-list" id="completedList"></div>
+    </div>
+  </div>
+
+  <div class="tabview" id="tab-faceoff">
+    <div class="section-title" style="margin-top:20px;">Face-Off</div>
+    <p class="modal-note">Compare two players head-to-head, calculated from every saved match — no made-up numbers. Counts only matches where they were on opposite teams.</p>
+    <div class="faceoff-pickers">
+      <select id="fo1" class="foselect"></select>
+      <span class="fo-vs">VS</span>
+      <select id="fo2" class="foselect"></select>
+    </div>
+    <div id="faceoffResult"></div>
+  </div>
+
+  <div class="tabview" id="tab-stats">
+    <div class="section-title" style="margin-top:20px;">Player stats</div>
+    <p class="modal-note">All-time, calculated fresh from every saved match every time.</p>
+    <div class="statsgrid" id="statsGrid"></div>
+    <div class="actions" style="margin:18px 20px 0;">
+      <button class="btn" id="pointsOpenBtn">Today's points table</button>
+      <button class="btn" id="overallOpenBtn">Overall points table</button>
+    </div>
+  </div>
+
+  <p class="tagline">More play. <span>Less worry.</span></p>
+</div>
+
+<nav class="bottomnav">
+  <button class="navbtn active" data-tab="tab-home"><span class="navdot"></span>Home</button>
+  <button class="navbtn" data-tab="tab-matches"><span class="navdot"></span>Matches</button>
+  <button class="navbtn" data-tab="tab-faceoff"><span class="navdot"></span>Face-Off</button>
+  <button class="navbtn" data-tab="tab-stats"><span class="navdot"></span>Stats</button>
+</nav>
+
+<div class="modal-backdrop" id="pointsModal">
+  <div class="modal-sheet">
+    <div class="modal-head"><span class="section-title" style="margin:0;">Points table — today</span><button class="modal-close" data-close="pointsModal">&times;</button></div>
+    <p class="modal-note">Only matches dated today.</p>
+    <div class="standings"><table><thead><tr><th>Player</th><th style="text-align:center">P</th><th style="text-align:center">W</th><th style="text-align:center">L</th><th style="text-align:center">PF</th><th style="text-align:center">PA</th><th style="text-align:center">Diff</th><th style="text-align:center">Pts</th></tr></thead><tbody id="standingsBodyToday"></tbody></table></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="overallModal">
+  <div class="modal-sheet">
+    <div class="modal-head"><span class="section-title" style="margin:0;">Overall points table</span><button class="modal-close" data-close="overallModal">&times;</button></div>
+    <p class="modal-note">Every match ever saved, added together.</p>
+    <div class="standings"><table><thead><tr><th>Player</th><th style="text-align:center">P</th><th style="text-align:center">W</th><th style="text-align:center">L</th><th style="text-align:center">PF</th><th style="text-align:center">PA</th><th style="text-align:center">Diff</th><th style="text-align:center">Pts</th></tr></thead><tbody id="standingsBodyOverall"></tbody></table></div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_PLAYER_NAMES = ["Viki","Ram","SR","Sai","Aj","Vialson","Kill"];
+const STORAGE_KEY = "picklescore-v1";
+let state = {};
+const unlocked = new Set();
+let wizard = { format:"rotating", selected:new Set(), points:11, rounds:6, preview:null };
+let completedExpanded = new Set();
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function initState(){
+  if(!state.players){
+    state.players = {};
+    DEFAULT_PLAYER_NAMES.forEach((name,i) => { state.players["p"+(i+1)] = { name }; });
+    state.nextPlayerNum = DEFAULT_PLAYER_NAMES.length + 1;
+  }
+  if(!state.matchLog) state.matchLog = [];
+  if(!state.nextMatchNo) state.nextMatchNo = 1;
+  wizard.selected = new Set(Object.keys(state.players));
+}
+
+async function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){}
+  initState();
+}
+async function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+function playerName(id){ return (state.players[id] && state.players[id].name) || "?"; }
+function initials(name){ return name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+function isFinished(a,b,target){ target = target || 11; return (a >= target || b >= target) && Math.abs(a-b) >= 2; }
+
+function playerOptions(selectedId){
+  return Object.keys(state.players).map(p =>
+    `<option value="${p}" ${p===selectedId?'selected':''}>${playerName(p)}</option>`
+  ).join("");
+}
+
+/* ---------- scheduling ---------- */
+function pKey(a,b){ return [a,b].sort().join("_"); }
+
+function generateRotatingSchedule(ids, rounds){
+  const gamesPlayed = {}; const partnerCount = {};
+  ids.forEach(id => gamesPlayed[id] = 0);
+  const schedule = [];
+  for(let r=0; r<rounds; r++){
+    const sorted = [...ids].sort((a,b) => gamesPlayed[a]-gamesPlayed[b] || Math.random()-0.5);
+    const playing = sorted.slice(0,4);
+    const resting = ids.filter(id => !playing.includes(id));
+    const [p1,p2,p3,p4] = playing;
+    const options = [
+      {a:[p1,p2], b:[p3,p4]},
+      {a:[p1,p3], b:[p2,p4]},
+      {a:[p1,p4], b:[p2,p3]}
+    ];
+    options.forEach(o => { o.score = (partnerCount[pKey(...o.a)]||0) + (partnerCount[pKey(...o.b)]||0); });
+    options.sort((x,y) => x.score - y.score);
+    const chosen = options[0];
+    schedule.push({ a:chosen.a, b:chosen.b, resting, type:"rotating" });
+    partnerCount[pKey(...chosen.a)] = (partnerCount[pKey(...chosen.a)]||0) + 1;
+    partnerCount[pKey(...chosen.b)] = (partnerCount[pKey(...chosen.b)]||0) + 1;
+    playing.forEach(id => gamesPlayed[id]++);
+  }
+  return schedule;
+}
+
+function generateSinglesSchedule(ids){
+  const schedule = [];
+  const shuffled = [...ids].sort(() => Math.random()-0.5);
+  for(let i=0;i<shuffled.length;i++){
+    for(let j=i+1;j<shuffled.length;j++){
+      schedule.push({a:[shuffled[i]], b:[shuffled[j]], type:"singles", resting:[]});
+    }
+  }
+  return schedule;
+}
+
+function generateFixedDoublesSchedule(ids){
+  const shuffled = [...ids].sort(() => Math.random()-0.5);
+  const teams = [];
+  for(let i=0;i<shuffled.length;i+=2) teams.push([shuffled[i], shuffled[i+1]]);
+  let list = [...teams];
+  const BYE = null;
+  if(list.length % 2 !== 0) list.push(BYE);
+  const n = list.length;
+  const rounds = n - 1;
+  let arr = [...list];
+  const schedule = [];
+  for(let r=0; r<rounds; r++){
+    for(let i=0; i<n/2; i++){
+      const t1 = arr[i], t2 = arr[n-1-i];
+      if(t1 !== BYE && t2 !== BYE) schedule.push({ a:t1, b:t2, type:"doubles" });
+    }
+    const fixed = arr[0];
+    const rest = arr.slice(1);
+    rest.unshift(rest.pop());
+    arr = [fixed, ...rest];
+  }
+  return schedule;
+}
+
+/* ---------- standings ---------- */
+function computeStandingsFor(matches){
+  const tally = {};
+  Object.keys(state.players).forEach(p => tally[p] = { played:0, wins:0, losses:0, pf:0, pa:0 });
+  matches.forEach(m => {
+    const finished = isFinished(m.scoreA, m.scoreB, m.target);
+    m.a.forEach(p => { if(tally[p]){ tally[p].pf += m.scoreA; tally[p].pa += m.scoreB; } });
+    m.b.forEach(p => { if(tally[p]){ tally[p].pf += m.scoreB; tally[p].pa += m.scoreA; } });
+    if(finished){
+      const aWin = m.scoreA > m.scoreB;
+      m.a.forEach(p => { if(tally[p]){ tally[p].played++; aWin ? tally[p].wins++ : tally[p].losses++; } });
+      m.b.forEach(p => { if(tally[p]){ tally[p].played++; aWin ? tally[p].losses++ : tally[p].wins++; } });
+    }
+  });
+  return tally;
+}
+
+function orderByTally(tally){
+  return Object.keys(state.players).sort((a,b) => {
+    const lpB = tally[b].wins*2, lpA = tally[a].wins*2;
+    if(lpB !== lpA) return lpB - lpA;
+    return (tally[b].pf-tally[b].pa) - (tally[a].pf-tally[a].pa);
+  });
+}
+
+function renderStandingsTable(tbodyId, tally){
+  const ordered = orderByTally(tally);
+  const body = document.getElementById(tbodyId);
+  body.innerHTML = "";
+  ordered.forEach((p, idx) => {
+    const t = tally[p]; const diff = t.pf - t.pa;
+    const tr = document.createElement("tr");
+    if(idx === 0) tr.className = "top";
+    tr.innerHTML = `<td class="name">${playerName(p)}</td><td class="num">${t.played}</td><td class="num lead">${t.wins}</td><td class="num">${t.losses}</td><td class="num">${t.pf}</td><td class="num">${t.pa}</td><td class="num">${diff>0?'+':''}${diff}</td><td class="num lead">${t.wins*2}</td>`;
+    body.appendChild(tr);
+  });
+  return ordered;
+}
+
+function computeIndividualStats(matches){
+  const stats = {};
+  Object.keys(state.players).forEach(p => stats[p] = { played:0, wins:0, losses:0, pf:0, pa:0, partners:new Set(), opponents:new Set() });
+  matches.forEach(m => {
+    if((m.a.length !== 1 && m.a.length !== 2) || (m.b.length !== 1 && m.b.length !== 2)) return;
+    const finished = isFinished(m.scoreA, m.scoreB, m.target);
+    m.a.forEach(p => {
+      if(!stats[p]) return;
+      stats[p].pf += m.scoreA; stats[p].pa += m.scoreB;
+      m.a.filter(x=>x!==p).forEach(x => stats[p].partners.add(x));
+      m.b.forEach(x => stats[p].opponents.add(x));
+    });
+    m.b.forEach(p => {
+      if(!stats[p]) return;
+      stats[p].pf += m.scoreB; stats[p].pa += m.scoreA;
+      m.b.filter(x=>x!==p).forEach(x => stats[p].partners.add(x));
+      m.a.forEach(x => stats[p].opponents.add(x));
+    });
+    if(finished){
+      const aWin = m.scoreA > m.scoreB;
+      m.a.forEach(p => { if(stats[p]){ stats[p].played++; aWin ? stats[p].wins++ : stats[p].losses++; } });
+      m.b.forEach(p => { if(stats[p]){ stats[p].played++; aWin ? stats[p].losses++ : stats[p].wins++; } });
+    }
+  });
+  return stats;
+}
+
+function computeFaceOff(id1, id2){
+  const records = state.matchLog.filter(m => {
+    const aHas1=m.a.includes(id1), aHas2=m.a.includes(id2);
+    const bHas1=m.b.includes(id1), bHas2=m.b.includes(id2);
+    return (aHas1 && bHas2) || (aHas2 && bHas1);
+  });
+  let wins1=0, wins2=0, pts1=0, pts2=0;
+  const matchLines = [];
+  records.forEach(r => {
+    const oneOnA = r.a.includes(id1);
+    const p1Score = oneOnA ? r.scoreA : r.scoreB;
+    const p2Score = oneOnA ? r.scoreB : r.scoreA;
+    pts1 += p1Score; pts2 += p2Score;
+    const p1Won = p1Score > p2Score;
+    if(p1Won) wins1++; else wins2++;
+    matchLines.push({ date:r.date, teamA:r.a.map(x=>playerName(x)).join(" & "), teamB:r.b.map(x=>playerName(x)).join(" & "), scoreA:r.scoreA, scoreB:r.scoreB });
+  });
+  return { total:records.length, wins1, wins2, pts1, pts2, matches:matchLines };
+}
+
+function buildSummary(tally, ordered){
+  const lines = ["PickleScore results — today"];
+  lines.push("");
+  ordered.forEach((p,idx) => { const t=tally[p]; lines.push(`${idx+1}. ${playerName(p)} — ${t.wins}W ${t.losses}L, ${t.pf}-${t.pa}`); });
+  return lines.join("\n");
+}
+
+/* ---------- wizard ---------- */
+function renderWizard(){
+  document.querySelectorAll(".optioncard").forEach(b => b.classList.toggle("selected", b.dataset.fmt === wizard.format));
+  document.getElementById("roundsField").style.display = wizard.format === "rotating" ? "block" : "none";
+
+  const list = document.getElementById("wizardPlayerList");
+  list.innerHTML = Object.keys(state.players).map(p => `
+    <div class="checkrow">
+      <input type="checkbox" id="chk-${p}" data-p="${p}" ${wizard.selected.has(p) ? "checked":""}>
+      <label for="chk-${p}">${playerName(p)}</label>
+    </div>
+  `).join("");
+  list.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    cb.addEventListener("change", () => {
+      if(cb.checked) wizard.selected.add(cb.dataset.p); else wizard.selected.delete(cb.dataset.p);
+      if(wizard.format === "rotating") wizard.rounds = Math.max(wizard.selected.size, 1);
+      renderWizard();
+    });
+  });
+
+  document.querySelectorAll("#wizardPoints .pillopt").forEach(b => b.classList.toggle("selected", parseInt(b.dataset.pts,10) === wizard.points));
+  document.getElementById("roundsVal").textContent = wizard.rounds;
+
+  const n = wizard.selected.size;
+  const warn = document.getElementById("wizardWarn");
+  warn.innerHTML = "";
+  if(wizard.format === "singles"){
+    if(n < 2) warn.innerHTML = `<div class="warn-inline">Pick at least 2 players.</div>`;
+  } else if(n < 4){
+    warn.innerHTML = `<div class="warn-inline">Pick at least 4 players.</div>`;
+  } else if(n % 2 !== 0){
+    warn.innerHTML = `<div class="warn-inline">Doubles needs an even number of players — you've picked ${n}. Add or remove one.</div>`;
+  }
+}
+
+function generateSchedule(){
+  const ids = [...wizard.selected];
+  if(wizard.format === "singles" && ids.length < 2) return;
+  if(wizard.format !== "singles" && (ids.length < 4 || ids.length % 2 !== 0)) return;
+  const raw = wizard.format === "singles"
+    ? generateSinglesSchedule(ids)
+    : (wizard.format === "rotating" ? generateRotatingSchedule(ids, wizard.rounds) : generateFixedDoublesSchedule(ids));
+  wizard.preview = raw.map(m => ({ ...m, scoreA:0, scoreB:0, target:wizard.points }));
+  renderPreview();
+}
+
+function renderPreview(){
+  const el = document.getElementById("previewPanel");
+  if(!wizard.preview){ el.innerHTML = ""; return; }
+  el.innerHTML = `
+    <div class="section-title">Preview — ${wizard.preview.length} matches</div>
+    <p class="sub-note">Review the pairings below, then start. You can still edit players on any match after it's live.</p>
+    <div id="previewMatches"></div>
+    <div class="actions" style="margin:14px 20px 0;">
+      <button class="btn" id="regenerateBtn">Regenerate</button>
+      <button class="btn primary" id="startSessionBtn">Start ${wizard.preview.length} matches</button>
+    </div>
+  `;
+  const holder = document.getElementById("previewMatches");
+  wizard.preview.forEach((m, i) => {
+    const row = document.createElement("div");
+    row.className = "round";
+    row.innerHTML = `
+      <div class="round-head"><b>Match ${i+1}</b><div class="dash"></div></div>
+      ${m.resting && m.resting.length ? `<div class="resting">${m.resting.map(p=>`<span class="pill">${playerName(p)} resting</span>`).join("")}</div>` : ""}
+      <div class="match" style="padding:10px 12px;">
+        <div class="teams-grid" style="gap:8px;">
+          <div class="team-card a" style="padding:10px;gap:4px;">
+            <select class="who" data-i="${i}" data-side="a" data-slot="0" style="font-size:12px;">${playerOptions(m.a[0])}</select>
+            <span class="amp">&amp;</span>
+            <select class="who" data-i="${i}" data-side="a" data-slot="1" style="font-size:12px;">${playerOptions(m.a[1])}</select>
+          </div>
+          <div class="team-card b" style="padding:10px;gap:4px;">
+            <select class="who" data-i="${i}" data-side="b" data-slot="0" style="font-size:12px;">${playerOptions(m.b[0])}</select>
+            <span class="amp">&amp;</span>
+            <select class="who" data-i="${i}" data-side="b" data-slot="1" style="font-size:12px;">${playerOptions(m.b[1])}</select>
+          </div>
+        </div>
+      </div>
+    `;
+    holder.appendChild(row);
+  });
+  holder.querySelectorAll("select.who").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const i = parseInt(sel.dataset.i,10), side = sel.dataset.side, slot = parseInt(sel.dataset.slot,10);
+      wizard.preview[i][side][slot] = sel.value;
+    });
+  });
+  document.getElementById("regenerateBtn").addEventListener("click", generateSchedule);
+  document.getElementById("startSessionBtn").addEventListener("click", startSession);
+}
+
+async function startSession(){
+  const date = todayStr();
+  wizard.preview.forEach(m => {
+    state.matchLog.push({
+      id: "m" + (state.nextMatchNo++),
+      date, type: m.type,
+      a:[...m.a], b:[...m.b],
+      resting: m.resting || [],
+      scoreA:0, scoreB:0, target:m.target
+    });
+  });
+  wizard.preview = null;
+  document.getElementById("wizardPanel").style.display = "none";
+  document.getElementById("previewPanel").innerHTML = "";
+  await saveState();
+  render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  const today = state.matchLog.filter(m => m.date === todayStr());
+  const todayTally = computeStandingsFor(today);
+  const overallTally = computeStandingsFor(state.matchLog);
+  const ordered = renderStandingsTable("standingsBodyToday", todayTally);
+  renderStandingsTable("standingsBodyOverall", overallTally);
+
+  const doneToday = today.filter(m => isFinished(m.scoreA, m.scoreB, m.target));
+  document.getElementById("hStatDone").textContent = doneToday.length;
+  document.getElementById("hStatTotal").textContent = today.length;
+  const leaderToday = ordered.find(p => todayTally[p].wins > 0);
+  document.getElementById("hStatLeader").textContent = leaderToday ? playerName(leaderToday) : "—";
+
+  const unfinishedToday = today.filter(m => !isFinished(m.scoreA, m.scoreB, m.target));
+  const cc = document.getElementById("continueCard");
+  cc.innerHTML = unfinishedToday.length
+    ? `<div class="continue-card"><b>Unfinished session</b>${unfinishedToday.length} of ${today.length} today's matches still need scores.<button class="btn primary" id="continueBtn">Continue scoring</button></div>`
+    : "";
+  const continueBtn = document.getElementById("continueBtn");
+  if(continueBtn) continueBtn.addEventListener("click", () => goTab("tab-matches", "today"));
+
+  document.getElementById("shareBtn").href = "https://wa.me/?text=" + encodeURIComponent(buildSummary(todayTally, ordered));
+
+  const recentList = document.getElementById("recentList");
+  recentList.innerHTML = doneToday.length
+    ? doneToday.map(m => `<div class="recentrow"><span class="rteams">${m.a.map(playerName).join(" & ")} vs ${m.b.map(playerName).join(" & ")}</span><span class="rscore">${m.scoreA}-${m.scoreB}</span></div>`).join("")
+    : `<p class="empty-note">No matches finished yet today.</p>`;
+
+  renderWizard();
+
+  const todayHolder = document.getElementById("todayMatches");
+  todayHolder.innerHTML = "";
+  today.forEach(m => todayHolder.appendChild(renderMatchCard(m, true)));
+  wireMatchCardEvents(todayHolder);
+
+  renderCompletedList();
+
+  const istats = computeIndividualStats(state.matchLog);
+  const statsGrid = document.getElementById("statsGrid");
+  statsGrid.innerHTML = "";
+  Object.keys(state.players).forEach(p => {
+    const t = istats[p];
+    const winPct = t.played > 0 ? Math.round((t.wins/t.played)*100) : 0;
+    const avg = t.played > 0 ? (t.pf/t.played).toFixed(1) : "0.0";
+    const partnerNames = [...t.partners].map(x=>playerName(x)).join(", ") || "—";
+    const oppNames = [...t.opponents].map(x=>playerName(x)).join(", ") || "—";
+    const card = document.createElement("div");
+    card.className = "statcard";
+    card.innerHTML = `
+      <div class="statcard-head"><div class="who-name"><span class="avatar">${initials(playerName(p))}</span>${playerName(p)}</div><div class="winpct">${winPct}%</div></div>
+      <div class="statrow"><div class="statbox"><b>${t.played}</b><span>Played</span></div><div class="statbox"><b>${t.wins}</b><span>Won</span></div><div class="statbox"><b>${t.losses}</b><span>Lost</span></div><div class="statbox"><b>${avg}</b><span>Avg pts</span></div></div>
+      <p class="partners"><b>Partnered with:</b> ${partnerNames}</p>
+      <p class="partners"><b>Faced:</b> ${oppNames}</p>
+    `;
+    statsGrid.appendChild(card);
+  });
+
+  renderFaceOffSelects();
+  renderFaceOffResult();
+}
+
+function renderMatchCard(m, allowLock){
+  const finished = isFinished(m.scoreA, m.scoreB, m.target);
+  const locked = allowLock && finished && !unlocked.has(m.id);
+  const aWin = finished && m.scoreA > m.scoreB;
+  const bWin = finished && m.scoreB > m.scoreA;
+  const deuceAt = (m.target || 11) - 1;
+
+  const wrap = document.createElement("div");
+  wrap.className = "round";
+  wrap.innerHTML = `
+    <div class="round-head"><b>Match #${m.id.replace('m','')}${m.type==='rotating' ? ' · Rotating' : (m.type==='singles' ? ' · Singles' : ' · Doubles')}</b><div class="dash"></div></div>
+    ${m.resting && m.resting.length ? `<div class="resting">${m.resting.map(p=>`<span class="pill">${playerName(p)} resting</span>`).join("")}</div>` : ""}
+    <div class="match">
+      <div class="teams-grid">
+        <div class="team-card a">
+          ${aWin ? '<span class="winner-tag">Won</span>' : ''}
+          <div class="team-names">
+            <select class="who" data-id="${m.id}" data-side="a1">${playerOptions(m.a[0])}</select>
+            <span class="amp">&amp;</span>
+            <select class="who" data-id="${m.id}" data-side="a2">${playerOptions(m.a[1])}</select>
+          </div>
+          <div class="score-val">${m.scoreA}</div>
+          <div class="stepper-row">
+            <button class="stepper" data-id="${m.id}" data-side="scoreA" data-d="-1" ${locked?'disabled':''}>−</button>
+            <button class="stepper" data-id="${m.id}" data-side="scoreA" data-d="1" ${locked?'disabled':''}>+</button>
+          </div>
+        </div>
+        <div class="team-card b">
+          ${bWin ? '<span class="winner-tag">Won</span>' : ''}
+          <div class="team-names">
+            <select class="who" data-id="${m.id}" data-side="b1">${playerOptions(m.b[0])}</select>
+            <span class="amp">&amp;</span>
+            <select class="who" data-id="${m.id}" data-side="b2">${playerOptions(m.b[1])}</select>
+          </div>
+          <div class="score-val">${m.scoreB}</div>
+          <div class="stepper-row">
+            <button class="stepper" data-id="${m.id}" data-side="scoreB" data-d="-1" ${locked?'disabled':''}>−</button>
+            <button class="stepper" data-id="${m.id}" data-side="scoreB" data-d="1" ${locked?'disabled':''}>+</button>
+          </div>
+        </div>
+      </div>
+      <div class="status ${finished ? 'win-status':''}">
+        <span class="dot ${finished ? 'win-dot':''}"></span>
+        ${finished ? (aWin ? m.a.map(playerName).join(" & ") : m.b.map(playerName).join(" & ")) + " won" : (m.scoreA>=deuceAt && m.scoreB>=deuceAt ? "Deuce — win by 2" : (m.scoreA===0 && m.scoreB===0 ? "Not started" : "In progress"))}
+        ${finished && allowLock ? `<button class="editlink" data-id="${m.id}">${locked?'Edit':'Lock'}</button>` : ''}
+      </div>
+    </div>
+  `;
+  return wrap;
+}
+
+function wireMatchCardEvents(container){
+  container.querySelectorAll(".stepper").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const m = state.matchLog.find(x => x.id === btn.dataset.id);
+      const side = btn.dataset.side;
+      const d = parseInt(btn.dataset.d,10);
+      m[side] = Math.max(0, Math.min(60, m[side] + d));
+      await saveState();
+      render();
+    });
+  });
+  container.querySelectorAll("select.who").forEach(sel => {
+    sel.addEventListener("change", async () => {
+      const m = state.matchLog.find(x => x.id === sel.dataset.id);
+      const side = sel.dataset.side;
+      if(side === "a1") m.a[0] = sel.value;
+      if(side === "a2") m.a[1] = sel.value;
+      if(side === "b1") m.b[0] = sel.value;
+      if(side === "b2") m.b[1] = sel.value;
+      await saveState();
+      render();
+    });
+  });
+  container.querySelectorAll(".editlink").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if(unlocked.has(btn.dataset.id)) unlocked.delete(btn.dataset.id); else unlocked.add(btn.dataset.id);
+      render();
+    });
+  });
+}
+
+function renderCompletedList(){
+  const finished = state.matchLog.filter(m => isFinished(m.scoreA, m.scoreB, m.target)).slice().reverse();
+  const holder = document.getElementById("completedList");
+  holder.innerHTML = "";
+  if(finished.length === 0){
+    holder.innerHTML = `<p class="empty-note">No completed matches yet.</p>`;
+    return;
+  }
+  finished.forEach(m => {
+    const aWin = m.scoreA > m.scoreB;
+    const card = document.createElement("div");
+    card.className = "completed-card";
+    const expanded = completedExpanded.has(m.id);
+    card.innerHTML = `
+      <div class="completed-head"><span class="cnum">MATCH ${m.id.replace('m','')}</span><span class="cmeta">${m.date} · ${m.type==='rotating'?'Rotating doubles':(m.type==='singles'?'Singles':'Doubles')}</span></div>
+      <div class="completed-teams"><b>${m.a.map(playerName).join(" & ")}</b> ${m.scoreA} – ${m.scoreB} <b>${m.b.map(playerName).join(" & ")}</b></div>
+      <div class="completed-winner">Winner: ${aWin ? m.a.map(playerName).join(" & ") : m.b.map(playerName).join(" & ")}</div>
+      <button class="completed-editbtn" data-id="${m.id}">${expanded ? 'Close' : 'Edit match'}</button>
+      <div class="completed-edit-holder" id="cedit-${m.id}"></div>
+    `;
+    holder.appendChild(card);
+  });
+  holder.querySelectorAll(".completed-editbtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      if(completedExpanded.has(id)) completedExpanded.delete(id); else { completedExpanded.add(id); unlocked.add(id); }
+      renderCompletedList();
+      const target = document.getElementById("cedit-"+id);
+      if(target && completedExpanded.has(id)){
+        const m = state.matchLog.find(x => x.id === id);
+        target.appendChild(renderMatchCard(m, false));
+        wireMatchCardEvents(target);
+      }
+    });
+  });
+}
+
+/* ---------- Face-Off ---------- */
+function renderFaceOffSelects(){
+  const fo1 = document.getElementById("fo1"), fo2 = document.getElementById("fo2");
+  const keys = Object.keys(state.players);
+  const prev1 = fo1.value, prev2 = fo2.value;
+  fo1.innerHTML = playerOptions(prev1 && keys.includes(prev1) ? prev1 : keys[0]);
+  fo2.innerHTML = playerOptions(prev2 && keys.includes(prev2) ? prev2 : keys[1]);
+}
+function renderFaceOffResult(){
+  const id1 = document.getElementById("fo1").value, id2 = document.getElementById("fo2").value;
+  const out = document.getElementById("faceoffResult");
+  if(id1 === id2){ out.innerHTML = `<p class="empty-note">Pick two different players to compare.</p>`; return; }
+  const fo = computeFaceOff(id1, id2);
+  if(fo.total === 0){ out.innerHTML = `<p class="empty-note">${playerName(id1)} and ${playerName(id2)} haven't played on opposite teams yet.</p>`; return; }
+  const pct1 = Math.round((fo.wins1/fo.total)*100);
+  const diff1 = fo.pts1 - fo.pts2;
+  const last5 = fo.matches.slice(-5).reverse();
+  out.innerHTML = `
+    <div class="fo-summary">
+      <div class="fo-headline">
+        <div class="fo-side"><b>${fo.wins1}</b><span>${playerName(id1)}</span></div>
+        <div class="fo-mid">${fo.total}<br>matches</div>
+        <div class="fo-side"><b>${fo.wins2}</b><span>${playerName(id2)}</span></div>
+      </div>
+      <div class="fo-bar"><div class="fo-bar-fill" style="width:${pct1}%"></div></div>
+      <div class="fo-stats">
+        <div class="statbox"><b>${pct1}%</b><span>${playerName(id1)} win%</span></div>
+        <div class="statbox"><b>${fo.pts1}-${fo.pts2}</b><span>Points</span></div>
+        <div class="statbox"><b>${diff1>0?'+':''}${diff1}</b><span>${playerName(id1)} diff</span></div>
+      </div>
+    </div>
+    <div class="section-title">Last matches</div>
+    <div class="fo-history">${last5.map(m => `<div class="fo-hrow"><div class="fo-date">${m.date}</div><div class="fo-line">${m.teamA} <b>${m.scoreA}</b> — <b>${m.scoreB}</b> ${m.teamB}</div></div>`).join("")}</div>
+  `;
+}
+
+/* ---------- navigation ---------- */
+function goTab(tabId, seg){
+  document.querySelectorAll(".navbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
+  document.querySelectorAll(".tabview").forEach(t => t.classList.toggle("active", t.id === tabId));
+  if(tabId === "tab-matches" && seg) setSeg(seg);
+  window.scrollTo(0,0);
+}
+function setSeg(seg){
+  document.getElementById("segToday").classList.toggle("active", seg === "today");
+  document.getElementById("segCompleted").classList.toggle("active", seg === "completed");
+  document.getElementById("seg-today").style.display = seg === "today" ? "block" : "none";
+  document.getElementById("seg-completed").style.display = seg === "completed" ? "block" : "none";
+}
+
+document.querySelectorAll(".navbtn").forEach(btn => btn.addEventListener("click", () => goTab(btn.dataset.tab)));
+document.getElementById("segToday").addEventListener("click", () => setSeg("today"));
+document.getElementById("segCompleted").addEventListener("click", () => setSeg("completed"));
+document.getElementById("homePlayBtn").addEventListener("click", () => {
+  goTab("tab-matches", "today");
+  document.getElementById("wizardPanel").style.display = "block";
+});
+document.getElementById("homeCompletedBtn").addEventListener("click", () => goTab("tab-matches", "completed"));
+document.getElementById("newSessionBtn").addEventListener("click", () => {
+  const panel = document.getElementById("wizardPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+});
+
+document.querySelectorAll(".optioncard").forEach(btn => {
+  btn.addEventListener("click", () => {
+    wizard.format = btn.dataset.fmt;
+    if(wizard.format === "rotating") wizard.rounds = Math.max(wizard.selected.size, 1);
+    renderWizard();
+  });
+});
+document.querySelectorAll("#wizardPoints .pillopt").forEach(btn => {
+  btn.addEventListener("click", () => { wizard.points = parseInt(btn.dataset.pts,10); renderWizard(); });
+});
+document.getElementById("roundsMinus").addEventListener("click", () => { wizard.rounds = Math.max(1, wizard.rounds-1); renderWizard(); });
+document.getElementById("roundsPlus").addEventListener("click", () => { wizard.rounds = Math.min(30, wizard.rounds+1); renderWizard(); });
+document.getElementById("wizardAddPlayerBtn").addEventListener("click", async () => {
+  const input = document.getElementById("wizardNewPlayer");
+  const name = input.value.trim();
+  if(!name) return;
+  const id = "p" + (state.nextPlayerNum++);
+  state.players[id] = { name };
+  wizard.selected.add(id);
+  input.value = "";
+  await saveState();
+  renderWizard();
+});
+document.getElementById("generateBtn").addEventListener("click", () => {
+  const n = wizard.selected.size;
+  if((wizard.format === "singles" && n < 2) || (wizard.format !== "singles" && (n < 4 || n % 2 !== 0))) { renderWizard(); return; }
+  generateSchedule();
+});
+
+document.getElementById("pointsOpenBtn").addEventListener("click", () => document.getElementById("pointsModal").classList.add("open"));
+document.getElementById("overallOpenBtn").addEventListener("click", () => document.getElementById("overallModal").classList.add("open"));
+document.querySelectorAll(".modal-close").forEach(btn => btn.addEventListener("click", () => document.getElementById(btn.dataset.close).classList.remove("open")));
+document.querySelectorAll(".modal-backdrop").forEach(modal => modal.addEventListener("click", (e) => { if(e.target === modal) modal.classList.remove("open"); }));
+
+document.getElementById("fo1").addEventListener("change", renderFaceOffResult);
+document.getElementById("fo2").addEventListener("change", renderFaceOffResult);
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "picklescore-export.json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+(async function(){
+  await loadState();
+  wizard.rounds = Math.max(wizard.selected.size, 1);
+  render();
+})();
+</script>
+</body>
+</html>
