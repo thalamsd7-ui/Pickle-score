@@ -20,18 +20,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
       - name: Create Android project
+        shell: bash
         run: |
           mkdir -p android-app/app/src/main/java/com/picklescore/app
           mkdir -p android-app/app/src/main/assets
-          mkdir -p android-app/app/src/main/res/values
+          mkdir -p android-app/app/src/main/res/drawable
 
           cp index.html android-app/app/src/main/assets/index.html
+          cp picklescore_icon.png android-app/app/src/main/res/drawable/picklescore_icon.png
 
           cat > android-app/settings.gradle <<'EOF'
           pluginManagement {
@@ -60,6 +57,11 @@ jobs:
           }
           EOF
 
+          cat > android-app/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+
           cat > android-app/app/build.gradle <<'EOF'
           plugins {
               id 'com.android.application'
@@ -73,21 +75,24 @@ jobs:
                   applicationId 'com.picklescore.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '1.1'
               }
           }
           EOF
 
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
               <uses-permission android:name="android.permission.INTERNET" />
 
               <application
                   android:allowBackup="true"
                   android:label="PickleScore"
-                  android:theme="@style/AppTheme">
+                  android:icon="@drawable/picklescore_icon"
+                  android:roundIcon="@drawable/picklescore_icon"
+                  android:theme="@style/AppTheme"
+                  android:usesCleartextTraffic="true">
 
                   <activity
                       android:name=".MainActivity"
@@ -100,67 +105,64 @@ jobs:
                       </intent-filter>
 
                   </activity>
+
               </application>
+
           </manifest>
           EOF
 
+          mkdir -p android-app/app/src/main/res/values
+
           cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#D8FF3E</item>
-                  <item name="android:navigationBarColor">#07120F</item>
-                  <item name="android:statusBarColor">#07120F</item>
+                  <item name="android:colorAccent">#A6E22E</item>
+                  <item name="android:statusBarColor">#0A1512</item>
+                  <item name="android:navigationBarColor">#0A1512</item>
                   <item name="android:windowLightStatusBar">false</item>
               </style>
           </resources>
           EOF
 
-          cat > android-app/app/src/main/java/com/picklescore/app/MainActivity.java <<'EOF'
-          package com.picklescore.app;
+          cat > android-app/app/src/main/java/com/picklescore/app/MainActivity.kt <<'EOF'
+          package com.picklescore.app
 
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.webkit.WebChromeClient;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
+          import android.app.Activity
+          import android.os.Bundle
+          import android.webkit.WebView
+          import android.webkit.WebViewClient
 
-          public class MainActivity extends Activity {
-              private WebView webView;
+          class MainActivity : Activity() {
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
 
-                  webView = new WebView(this);
-                  setContentView(webView);
+                  val webView = WebView(this)
 
-                  WebSettings settings = webView.getSettings();
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
+                  webView.settings.javaScriptEnabled = true
+                  webView.settings.domStorageEnabled = true
+                  webView.settings.allowFileAccess = true
+                  webView.settings.allowContentAccess = true
 
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.webViewClient = WebViewClient()
 
-                  webView.loadUrl("file:///android_asset/index.html");
-              }
+                  setContentView(webView)
 
-              @Override
-              public void onBackPressed() {
-                  if (webView.canGoBack()) {
-                      webView.goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
+                  webView.loadUrl("file:///android_asset/index.html")
               }
           }
           EOF
 
+      - name: Download Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          unzip -q gradle-8.9-bin.zip
+          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
+
       - name: Build APK
         working-directory: android-app
-        run: gradle --no-daemon assembleDebug
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
