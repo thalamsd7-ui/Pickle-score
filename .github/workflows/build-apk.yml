@@ -20,11 +20,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
       - name: Create Android project
         shell: bash
         run: |
+          set -e
           mkdir -p android-app/app/src/main/java/com/picklescore/app
           mkdir -p android-app/app/src/main/assets
+          mkdir -p android-app/app/src/main/res/values
           mkdir -p android-app/app/src/main/res/drawable
 
           cp index.html android-app/app/src/main/assets/index.html
@@ -38,7 +45,6 @@ jobs:
                   gradlePluginPortal()
               }
           }
-
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
@@ -46,7 +52,6 @@ jobs:
                   mavenCentral()
               }
           }
-
           rootProject.name = "PickleScore"
           include(":app")
           EOF
@@ -55,11 +60,6 @@ jobs:
           plugins {
               id 'com.android.application' version '8.7.3' apply false
           }
-          EOF
-
-          cat > android-app/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          android.useAndroidX=true
           EOF
 
           cat > android-app/app/build.gradle <<'EOF'
@@ -82,90 +82,93 @@ jobs:
           EOF
 
           cat > android-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
               <uses-permission android:name="android.permission.INTERNET" />
-
               <application
                   android:allowBackup="true"
                   android:label="PickleScore"
                   android:icon="@drawable/picklescore_icon"
                   android:roundIcon="@drawable/picklescore_icon"
                   android:theme="@style/AppTheme"
-                  android:usesCleartextTraffic="true">
-
+                  android:usesCleartextTraffic="false">
                   <activity
                       android:name=".MainActivity"
                       android:screenOrientation="portrait"
                       android:exported="true">
-
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
-
                   </activity>
-
               </application>
-
           </manifest>
           EOF
 
-          mkdir -p android-app/app/src/main/res/values
-
           cat > android-app/app/src/main/res/values/styles.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+              <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#A6E22E</item>
-                  <item name="android:statusBarColor">#0A1512</item>
-                  <item name="android:navigationBarColor">#0A1512</item>
+                  <item name="android:colorAccent">#D8FF3E</item>
+                  <item name="android:navigationBarColor">#07120F</item>
+                  <item name="android:statusBarColor">#07120F</item>
                   <item name="android:windowLightStatusBar">false</item>
               </style>
           </resources>
           EOF
 
-          cat > android-app/app/src/main/java/com/picklescore/app/MainActivity.kt <<'EOF'
-          package com.picklescore.app
+          cat > android-app/app/src/main/java/com/picklescore/app/MainActivity.java <<'EOF'
+          package com.picklescore.app;
 
-          import android.app.Activity
-          import android.os.Bundle
-          import android.webkit.WebView
-          import android.webkit.WebViewClient
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
 
-          class MainActivity : Activity() {
+          public class MainActivity extends Activity {
+              private WebView webView;
 
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
 
-                  val webView = WebView(this)
+                  webView = new WebView(this);
+                  setContentView(webView);
 
-                  webView.settings.javaScriptEnabled = true
-                  webView.settings.domStorageEnabled = true
-                  webView.settings.allowFileAccess = true
-                  webView.settings.allowContentAccess = true
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
+                  settings.setBuiltInZoomControls(false);
+                  settings.setDisplayZoomControls(false);
 
-                  webView.webViewClient = WebViewClient()
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient());
+                  webView.loadUrl("file:///android_asset/index.html");
+              }
 
-                  setContentView(webView)
-
-                  webView.loadUrl("file:///android_asset/index.html")
+              @Override
+              public void onBackPressed() {
+                  if (webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
               }
           }
           EOF
 
-      - name: Download Gradle
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
-          unzip -q gradle-8.9-bin.zip
-          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
-
-      - name: Build APK
+      - name: Build debug APK
         working-directory: android-app
-        run: gradle assembleDebug --no-daemon
+        run: gradle --no-daemon assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: PickleScore-APK
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
